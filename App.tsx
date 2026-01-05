@@ -26,30 +26,32 @@ const ResultCard: React.FC<ResultCardProps> = ({ res, isHero = false, highlightC
   <div className={`quest-card transition-all duration-300 ${highlightClass} ${isHero ? 'shadow-lg' : ''}`}>
     {/* Card Top: Shift (Left) | Original Input (Center) | Score (Right) */}
     <div className="quest-card-header">
-      <div className="quest-card-header-inner">
+      <div className="quest-card-header-inner flex w-full items-center justify-center gap-2">
         <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
         <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
-        <span className="font-mono shrink-0">{res.shift === 0 ? 'RAW' : `+${res.shift}`}</span>
-        <span className="flex-1 text-center truncate mx-2 opacity-50 font-mono text-[8px] uppercase px-1">
+        <span className="font-mono shrink-0 text-[14px] flex items-center justify-center">{res.shift === 0 ? 'RAW' : `+${res.shift}`}</span>
+        <span className="flex-1 text-center truncate mx-2 opacity-80 font-mono text-[15px] uppercase px-1 flex items-center justify-center">
           {originalText || '---'}
         </span>
-        <span className="opacity-80 shrink-0">{res.score}</span>
+        <span className="opacity-80 shrink-0 text-[14px] flex items-center justify-center">{res.score}</span>
       </div>
     </div>
-    {/* Card Body: Deciphered Text + Offset Rank Box */}
+    {/* Card Body: Deciphered Text + Rank Box now inside body-inner */}
     <div className="quest-card-body">
-      <div className="quest-card-body-inner">
+      <div className="quest-card-body-inner flex items-center justify-center relative">
+        {/* Rank Box: Now inside body-inner, absolutely positioned bottom left */}
+        <div className="rank-box">
+          <span className="w-full h-full flex items-center justify-center text-[13px] font-extrabold absolute left-0 top-0 z-10">{res.rank}</span>
+          <div className="rank-box-inner relative z-0">
+            <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
+            <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
+          </div>
+        </div>
         <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
         <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
-        <p className={`${isHero ? 'text-[15px]' : 'text-[13px]'} font-bold text-center break-all leading-tight px-3 py-1 text-[#2b1b13]`}>
+        <p className={`${isHero ? 'text-[19px]' : 'text-[15px]'} font-bold text-center break-all leading-tight px-3 py-1 text-[#2b1b13] w-full flex items-center justify-center`}>
           {res.text || <span className="opacity-10">—</span>}
         </p>
-        {/* Rank Box: Popped out Bottom Left */}
-        <div className="rank-box">
-          <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
-          <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
-          {res.rank}
-        </div>
       </div>
     </div>
   </div>
@@ -192,7 +194,18 @@ const App: React.FC = () => {
       <section className="px-4 py-3 bg-[#4d3221] border-t-2 border-[#2b1b13] shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] z-40">
         <div className="max-w-4xl mx-auto">
           <div className="w-full bg-[#1a110c] border border-[#2b1b13] rounded-lg p-3 text-center text-3xl font-lcd tracking-[0.1em] text-[#b08d66] min-h-[4rem] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] break-all">
-            {input || <span className="opacity-20 italic font-sans text-sm tracking-normal">Awaiting Cipher Input...</span>}
+            <div className="w-full flex gap-4">
+              <div className="flex-1 flex items-center justify-center">
+                <span className={input ? "font-sans text-sm tracking-normal" : "opacity-20 italic font-sans text-sm tracking-normal"}>
+                  {input || "Awaiting Cipher Input..."}
+                </span>
+              </div>
+              <div className="flex-1 flex items-center justify-center">
+                <span className={input ? "font-mono text-sm tracking-normal" : "opacity-20 font-mono text-sm tracking-normal"}>
+                  {input || "Awaiting Cipher Input..."}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
