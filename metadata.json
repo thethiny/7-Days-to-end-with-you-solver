@@ -1,0 +1,5 @@
+{
+  "name": "LexiKey - Word Quest",
+  "description": "A polished word-guessing game featuring an Android-style QWERTY keyboard and dynamic word loading. Master your vocabulary with AI-powered hints.",
+  "requestFramePermissions": []
+}

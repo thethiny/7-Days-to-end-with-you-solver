@@ -1,0 +1,210 @@
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { fetchAndIndexWords, IndexedDictionary } from './services/wordService';
+import { analyzeShifts } from './services/caesarService';
+import { ShiftResult } from './types';
+import Keyboard from './components/Keyboard';
+
+const getRankHighlight = (res: ShiftResult, input: string) => {
+  if (res.score <= 0 || !input) return '';
+  switch (res.rank) {
+    case 1: return 'rank-top-1 scale-[1.02] z-20 shadow-md';
+    case 2: return 'rank-top-2 z-10';
+    case 3: return 'rank-top-3 z-10';
+    default: return '';
+  }
+};
+
+interface ResultCardProps {
+  res: ShiftResult;
+  isHero?: boolean;
+  highlightClass: string;
+  originalText: string;
+}
+
+const ResultCard: React.FC<ResultCardProps> = ({ res, isHero = false, highlightClass, originalText }) => (
+  <div className={`quest-card transition-all duration-300 ${highlightClass} ${isHero ? 'shadow-lg' : ''}`}>
+    {/* Card Top: Shift (Left) | Original Input (Center) | Score (Right) */}
+    <div className="quest-card-header">
+      <div className="quest-card-header-inner">
+        <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
+        <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
+        <span className="font-mono shrink-0">{res.shift === 0 ? 'RAW' : `+${res.shift}`}</span>
+        <span className="flex-1 text-center truncate mx-2 opacity-50 font-mono text-[8px] uppercase px-1">
+          {originalText || '---'}
+        </span>
+        <span className="opacity-80 shrink-0">{res.score}</span>
+      </div>
+    </div>
+    {/* Card Body: Deciphered Text + Offset Rank Box */}
+    <div className="quest-card-body">
+      <div className="quest-card-body-inner">
+        <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
+        <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
+        <p className={`${isHero ? 'text-[15px]' : 'text-[13px]'} font-bold text-center break-all leading-tight px-3 py-1 text-[#2b1b13]`}>
+          {res.text || <span className="opacity-10">—</span>}
+        </p>
+        {/* Rank Box: Popped out Bottom Left */}
+        <div className="rank-box">
+          <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
+          <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
+          {res.rank}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const App: React.FC = () => {
+  const [dictionary, setDictionary] = useState<IndexedDictionary | null>(null);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [results, setResults] = useState<ShiftResult[]>(
+    Array.from({ length: 26 }, (_, i) => ({ shift: i, text: '', score: 0, rank: i + 1 }))
+  );
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const analysisTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    fetchAndIndexWords().then(dict => {
+      setDictionary(dict);
+      setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!dictionary) return;
+    
+    if (!input) {
+      setResults(Array.from({ length: 26 }, (_, i) => ({ shift: i, text: '', score: 0, rank: i + 1 })));
+      return;
+    }
+
+    if (analysisTimeoutRef.current) clearTimeout(analysisTimeoutRef.current);
+
+    setIsAnalyzing(true);
+    analysisTimeoutRef.current = window.setTimeout(() => {
+      const newResults = analyzeShifts(input, dictionary);
+      setResults(newResults);
+      setIsAnalyzing(false);
+    }, 50);
+
+    return () => {
+      if (analysisTimeoutRef.current) clearTimeout(analysisTimeoutRef.current);
+    };
+  }, [input, dictionary]);
+
+  const topThree = useMemo(() => {
+    if (!input || results.every(r => r.score === 0)) return [];
+    return [...results].sort((a, b) => a.rank - b.rank).slice(0, 3);
+  }, [results, input]);
+
+  const handleKeyPress = (char: string) => setInput(prev => prev + char);
+  const handleBackspace = () => setInput(prev => prev.slice(0, -1));
+  const handleClear = () => setInput('');
+
+  // Global Keyboard Listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is using keyboard shortcuts (like Ctrl+R or Cmd+T)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.key === 'Backspace') {
+        handleBackspace();
+      } else if (e.key === 'Escape') {
+        handleClear();
+      } else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+        handleKeyPress(e.key.toUpperCase());
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-[#e6dfcc] flex flex-col items-center justify-center text-[#2b1b13]">
+        <div className="w-12 h-12 border-4 border-[#2b1b13] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h1 className="text-xl font-bold uppercase tracking-widest animate-pulse">Consulting the Archives...</h1>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col bg-[#e6dfcc] text-[#2b1b13] overflow-hidden">
+      {/* Top Header */}
+      <div className="bg-[#5d4231] text-[#e6dfcc] px-4 py-2 flex justify-between items-center shadow-md border-b-2 border-[#2b1b13] z-50">
+        <h1 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+          <i className="fa-solid fa-feather"></i> LexiKey Decipher
+        </h1>
+        <div className="flex items-center gap-3">
+          {isAnalyzing && <i className="fa-solid fa-feather-pointed animate-bounce text-amber-200 text-xs"></i>}
+          <div className="text-[10px] bg-[#2b1b13] text-[#b08d66] px-2 py-0.5 rounded border border-[#b08d66]">
+            {dictionary?.size || 0} WORDS LOADED
+          </div>
+        </div>
+      </div>
+
+      {/* Main Results Grid */}
+      <section className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        
+        {/* Top 3 Section */}
+        {topThree.length > 0 && (
+          <div className="mb-10">
+             <div className="flex items-center gap-2 mb-4">
+               <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#8c7e6a]">Top Suspects</h2>
+               <div className="flex-1 h-[1px] bg-[#d6ccb3]"></div>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+               {topThree.map(res => (
+                 <ResultCard 
+                    key={`top-${res.shift}`} 
+                    res={res} 
+                    isHero={true} 
+                    highlightClass={getRankHighlight(res, input)} 
+                    originalText={input}
+                 />
+               ))}
+             </div>
+          </div>
+        )}
+
+        {/* Full Grid Header */}
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#8c7e6a]">All Rotations</h2>
+          <div className="flex-1 h-[1px] bg-[#d6ccb3]"></div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-8 pb-8">
+          {results.map((res) => (
+            <ResultCard 
+                key={res.shift} 
+                res={res} 
+                highlightClass={getRankHighlight(res, input)} 
+                originalText={input}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Input Display Area */}
+      <section className="px-4 py-3 bg-[#4d3221] border-t-2 border-[#2b1b13] shadow-[inset_0_4px_12px_rgba(0,0,0,0.6)] z-40">
+        <div className="max-w-4xl mx-auto">
+          <div className="w-full bg-[#1a110c] border border-[#2b1b13] rounded-lg p-3 text-center text-3xl font-lcd tracking-[0.1em] text-[#b08d66] min-h-[4rem] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] break-all">
+            {input || <span className="opacity-20 italic font-sans text-sm tracking-normal">Awaiting Cipher Input...</span>}
+          </div>
+        </div>
+      </section>
+
+      {/* Full-width Wood Keyboard */}
+      <Keyboard 
+        onKeyPress={handleKeyPress} 
+        onBackspace={handleBackspace} 
+        onClear={handleClear} 
+      />
+    </div>
+  );
+};
+
+export default App;
