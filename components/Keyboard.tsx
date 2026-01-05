@@ -9,8 +9,8 @@ interface KeyboardProps {
 }
 
 const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, onBackspace, onClear }) => {
-  const getAvatarUrl = (char: string) => 
-    `https://ui-avatars.com/api/?name=${char}&background=b08d66&color=2b1b13&size=64&bold=true&rounded=true`;
+  const getAlphabetImageUrl = (char: string) => 
+    `/assets/alphabet/${char.toUpperCase()}.png`;
 
   return (
     <div className="w-full px-2 pb-6 bg-[#2b1b13] pt-4 border-t-4 border-[#4d3221] shadow-2xl">
@@ -21,9 +21,15 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, onBackspace, onClear })
               <button
                 key={key}
                 onClick={() => onKeyPress(key)}
-                className="android-key flex-1 max-w-[55px] aspect-[4/5] rounded-lg overflow-hidden shadow-lg border-b-4 border-[#1a110c] active:border-b-0 active:translate-y-1 transition-all"
+                className="android-key flex-1 max-w-[55px] aspect-[4/5] rounded-lg overflow-hidden shadow-lg border-b-4 border-[#1a110c] active:border-b-0 active:translate-y-1 transition-all relative"
               >
-                <img src={getAvatarUrl(key)} alt={key} className="w-full h-full object-cover" />
+                <img src={getAlphabetImageUrl(key)} alt={key} className="w-full h-full object-cover" />
+                <span
+                  className="absolute top-1 right-1 bg-[#fff9] text-[#2b1b13] text-[0.65rem] font-bold px-1 py-0.5 rounded shadow"
+                  style={{pointerEvents: 'none'}}
+                >
+                  {key}
+                </span>
               </button>
             ))}
           </div>

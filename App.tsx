@@ -65,6 +65,7 @@ const App: React.FC = () => {
     Array.from({ length: 26 }, (_, i) => ({ shift: i, text: '', score: 0, rank: i + 1 }))
   );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [scoringMode, setScoringMode] = useState(true);
   const analysisTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -76,7 +77,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!dictionary) return;
-    
     if (!input) {
       setResults(Array.from({ length: 26 }, (_, i) => ({ shift: i, text: '', score: 0, rank: i + 1 })));
       return;
@@ -86,7 +86,11 @@ const App: React.FC = () => {
 
     setIsAnalyzing(true);
     analysisTimeoutRef.current = window.setTimeout(() => {
-      const newResults = analyzeShifts(input, dictionary);
+      let newResults = analyzeShifts(input, dictionary);
+      if (!scoringMode) {
+        // Set all scores to 0 and rank to original order
+        newResults = newResults.map((r, i) => ({ ...r, score: 0, rank: i + 1 }));
+      }
       setResults(newResults);
       setIsAnalyzing(false);
     }, 50);
@@ -94,12 +98,12 @@ const App: React.FC = () => {
     return () => {
       if (analysisTimeoutRef.current) clearTimeout(analysisTimeoutRef.current);
     };
-  }, [input, dictionary]);
+  }, [input, dictionary, scoringMode]);
 
   const topThree = useMemo(() => {
-    if (!input || results.every(r => r.score === 0)) return [];
+    if (!scoringMode || !input || results.every(r => r.score === 0)) return [];
     return [...results].sort((a, b) => a.rank - b.rank).slice(0, 3);
-  }, [results, input]);
+  }, [results, input, scoringMode]);
 
   const handleKeyPress = (char: string) => setInput(prev => prev + char);
   const handleBackspace = () => setInput(prev => prev.slice(0, -1));
@@ -138,12 +142,25 @@ const App: React.FC = () => {
       {/* Top Header */}
       <div className="bg-[#5d4231] text-[#e6dfcc] px-4 py-2 flex justify-between items-center shadow-md border-b-2 border-[#2b1b13] z-50">
         <h1 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-          <i className="fa-solid fa-feather"></i> LexiKey Decipher
+          <i className="fa-solid fa-feather"></i> 7 Days to End With You Solver
         </h1>
         <div className="flex items-center gap-3">
           {isAnalyzing && <i className="fa-solid fa-feather-pointed animate-bounce text-amber-200 text-xs"></i>}
           <div className="text-[10px] bg-[#2b1b13] text-[#b08d66] px-2 py-0.5 rounded border border-[#b08d66]">
             {dictionary?.size || 0} WORDS LOADED
+          </div>
+          {/* Scoring Mode Toggle */}
+          <div className="flex items-center gap-1 ml-2">
+            <label htmlFor="scoring-toggle" className="text-[10px] font-bold uppercase tracking-widest cursor-pointer select-none flex items-center gap-1">
+              <span>Scoring</span>
+              <input
+                id="scoring-toggle"
+                type="checkbox"
+                className="accent-[#b08d66] w-4 h-4 cursor-pointer"
+                checked={scoringMode}
+                onChange={() => setScoringMode((v) => !v)}
+              />
+            </label>
           </div>
         </div>
       </div>
@@ -164,7 +181,7 @@ const App: React.FC = () => {
                     key={`top-${res.shift}`} 
                     res={res} 
                     isHero={true} 
-                    highlightClass={getRankHighlight(res, input)} 
+                    highlightClass={scoringMode ? getRankHighlight(res, input) : ''} 
                     originalText={input}
                  />
                ))}
@@ -183,7 +200,7 @@ const App: React.FC = () => {
             <ResultCard 
                 key={res.shift} 
                 res={res} 
-                highlightClass={getRankHighlight(res, input)} 
+                highlightClass={scoringMode ? getRankHighlight(res, input) : ''} 
                 originalText={input}
             />
           ))}
