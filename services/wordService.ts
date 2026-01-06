@@ -1,7 +1,6 @@
 
 
-// Use the local words_alpha.txt file from the assets folder
-const WORDS_URL = '/assets/words_alpha.txt';
+const WORDS_URL = '/words_alpha.txt';
 
 export type IndexedDictionary = Map<number, Set<string>>;
 
@@ -9,9 +8,6 @@ export async function fetchAndIndexWords(): Promise<IndexedDictionary> {
   try {
     const response = await fetch(WORDS_URL);
     if (!response.ok) {
-        // If direct fetch fails, it might be a CORS issue in some environments. 
-        // We'll try a fallback to common small words if the fetch is completely blocked, 
-        // but the standard raw URL usually works.
         throw new Error(`Failed to fetch dictionary: ${response.status} ${response.statusText}`);
     }
     const text = await response.text();

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import './fonts.css';
-import './keyboard-responsive.css';
+import './assets/fonts.css';
+import './assets/keyboard-responsive.css';
 import { fetchAndIndexWords, IndexedDictionary } from './services/wordService';
 import { analyzeShifts } from './services/caesarService';
 import { ShiftResult } from './types';
