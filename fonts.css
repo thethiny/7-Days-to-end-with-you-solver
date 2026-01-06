@@ -1,0 +1,14 @@
+@font-face {
+  font-family: '7DaysToLiveWithYou';
+  src: url('./assets/7DaysToLiveWithYou.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-7days {
+  font-family: '7DaysToLiveWithYou', sans-serif;
+}
+
+.font-console {
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', 'Liberation Mono', 'Courier New', monospace;
+}

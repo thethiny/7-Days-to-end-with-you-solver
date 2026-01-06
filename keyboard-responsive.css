@@ -1,0 +1,13 @@
+/* Responsive keyboard height for portrait mode */
+@media (max-width: 900px) and (orientation: portrait) {
+  .keyboard-bottom-section {
+    min-height: 32vh;
+    /* You can adjust this value for comfort */
+  }
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .keyboard-bottom-section {
+    min-height: 38vh;
+  }
+}

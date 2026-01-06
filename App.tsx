@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import './fonts.css';
+import './keyboard-responsive.css';
 import { fetchAndIndexWords, IndexedDictionary } from './services/wordService';
 import { analyzeShifts } from './services/caesarService';
 import { ShiftResult } from './types';
@@ -30,7 +32,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ res, isHero = false, highlightC
         <div className="dot-deco dot-tl"></div><div className="dot-deco dot-tr"></div>
         <div className="dot-deco dot-bl"></div><div className="dot-deco dot-br"></div>
         <span className="font-mono shrink-0 text-[14px] flex items-center justify-center">{res.shift === 0 ? 'RAW' : `+${res.shift}`}</span>
-        <span className="flex-1 text-center truncate mx-2 opacity-80 font-mono text-[15px] uppercase px-1 flex items-center justify-center">
+        <span className="flex-1 text-center truncate mx-2 opacity-80 font-7days text-[15px] uppercase px-1 flex items-center justify-center">
           {originalText || '---'}
         </span>
         <span className="opacity-80 shrink-0 text-[14px] flex items-center justify-center">{res.score}</span>
@@ -105,14 +107,21 @@ const App: React.FC = () => {
     return [...results].sort((a, b) => a.rank - b.rank).slice(0, 3);
   }, [results, input, scoringMode]);
 
-  const handleKeyPress = (char: string) => setInput(prev => prev + char);
+  const [pressedKey, setPressedKey] = useState<string | null>(null);
+  const pressedKeyTimeout = useRef<number | null>(null);
+
+  const handleKeyPress = (char: string) => {
+    setInput(prev => prev + char);
+    setPressedKey(char);
+    if (pressedKeyTimeout.current) clearTimeout(pressedKeyTimeout.current);
+    pressedKeyTimeout.current = window.setTimeout(() => setPressedKey(null), 120);
+  };
   const handleBackspace = () => setInput(prev => prev.slice(0, -1));
   const handleClear = () => setInput('');
 
   // Global Keyboard Listener
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is using keyboard shortcuts (like Ctrl+R or Cmd+T)
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       if (e.key === 'Backspace') {
@@ -120,7 +129,11 @@ const App: React.FC = () => {
       } else if (e.key === 'Escape') {
         handleClear();
       } else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
-        handleKeyPress(e.key.toUpperCase());
+        const upper = e.key.toUpperCase();
+        setPressedKey(upper);
+        if (pressedKeyTimeout.current) clearTimeout(pressedKeyTimeout.current);
+        pressedKeyTimeout.current = window.setTimeout(() => setPressedKey(null), 120);
+        handleKeyPress(upper);
       }
     };
 
@@ -147,7 +160,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-3">
           {isAnalyzing && <i className="fa-solid fa-feather-pointed animate-bounce text-amber-200 text-xs"></i>}
           <div className="text-[10px] bg-[#2b1b13] text-[#b08d66] px-2 py-0.5 rounded border border-[#b08d66]">
-            {dictionary?.size || 0} WORDS LOADED
+            {dictionary ? Array.from(dictionary.values()).reduce((sum: number, set: Set<string>) => sum + set.size, 0) : 0} WORDS LOADED
           </div>
           {/* Scoring Mode Toggle */}
           <div className="flex items-center gap-1 ml-2">
@@ -213,12 +226,12 @@ const App: React.FC = () => {
           <div className="w-full bg-[#1a110c] border border-[#2b1b13] rounded-lg p-3 text-center text-3xl font-lcd tracking-[0.1em] text-[#b08d66] min-h-[4rem] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] break-all">
             <div className="w-full flex gap-4">
               <div className="flex-1 flex items-center justify-center">
-                <span className={input ? "font-sans text-sm tracking-normal" : "opacity-20 italic font-sans text-sm tracking-normal"}>
+                <span className={input ? "font-console text-sm tracking-normal" : "opacity-20 italic font-console text-sm tracking-normal"}>
                   {input || "Awaiting Cipher Input..."}
                 </span>
               </div>
               <div className="flex-1 flex items-center justify-center">
-                <span className={input ? "font-mono text-sm tracking-normal" : "opacity-20 font-mono text-sm tracking-normal"}>
+                <span className={input ? "font-7days text-sm tracking-normal" : "opacity-20 font-7days text-sm tracking-normal"}>
                   {input || "Awaiting Cipher Input..."}
                 </span>
               </div>
@@ -232,6 +245,7 @@ const App: React.FC = () => {
         onKeyPress={handleKeyPress} 
         onBackspace={handleBackspace} 
         onClear={handleClear} 
+        pressedKey={pressedKey}
       />
     </div>
   );
