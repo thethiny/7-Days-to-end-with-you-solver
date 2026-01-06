@@ -1,6 +1,6 @@
 
 
-const WORDS_URL = '/words_alpha.txt';
+const WORDS_URL = new URL('/assets/words_alpha.txt', import.meta.url).href;
 
 export type IndexedDictionary = Map<number, Set<string>>;
 
