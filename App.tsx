@@ -88,13 +88,26 @@ const App: React.FC = () => {
 
     setIsAnalyzing(true);
     analysisTimeoutRef.current = window.setTimeout(() => {
-      let newResults = analyzeShifts(input, dictionary);
+      let newResults;
       if (!scoringMode) {
-        // Set all scores to 0 and rank to original order
-        newResults = newResults.map((r, i) => ({ ...r, score: 0, rank: i + 1 }));
+        // Only perform Caesar shifts, skip scoring logic entirely
+        // Use ES import for caesarShift
+        import('./services/caesarService').then(({ caesarShift }) => {
+          newResults = Array.from({ length: 26 }, (_, k) => {
+            const shifted = caesarShift(input, k);
+            return { shift: k, text: shifted, score: 0, rank: k + 1 };
+          });
+          setResults(newResults);
+          setIsAnalyzing(false);
+        });
+      } else {
+        // Use ES import for analyzeShifts
+        import('./services/caesarService').then(({ analyzeShifts }) => {
+          newResults = analyzeShifts(input, dictionary);
+          setResults(newResults);
+          setIsAnalyzing(false);
+        });
       }
-      setResults(newResults);
-      setIsAnalyzing(false);
     }, 50);
 
     return () => {
